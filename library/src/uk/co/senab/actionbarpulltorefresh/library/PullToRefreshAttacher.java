@@ -74,12 +74,13 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
     private final int mTouchSlop;
     private final float mRefreshScrollDistance;
 
-    private float mInitialMotionY, mLastMotionY, mPullBeginY;
+    private float mInitialMotionY, mPullBeginY, mLastMotionY = -1f;
     private boolean mIsBeingDragged, mIsRefreshing, mIsHandlingTouchEvent;
 
     private final WeakHashMap<View, ViewParams> mRefreshableViews;
 
     private boolean mEnabled = true;
+    private boolean pullFromBottom = false;
     private boolean mRefreshOnUp;
     private int mRefreshMinimizeDelay;
 
@@ -354,7 +355,7 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
                 // We're not currently being dragged so check to see if the user has scrolled enough
                 if (!mIsBeingDragged && mInitialMotionY > 0f) {
                     final float y = event.getY();
-                    final float yDiff = y - mInitialMotionY;
+                    final float yDiff = pullFromBottom ? mInitialMotionY - y : y - mInitialMotionY;
 
                     if (yDiff > mTouchSlop) {
                         mIsBeingDragged = true;
@@ -417,10 +418,10 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
                      * Check to see if the user is scrolling the right direction (down).
                      * We allow a small scroll up which is the check against negative touch slop.
                      */
-                    if (yDx >= -mTouchSlop) {
+                    if (pullFromBottom ? yDx <= mTouchSlop || mLastMotionY == -1f : yDx >= -mTouchSlop) {
                         onPull(view, y);
                         // Only record the y motion if the user has scrolled down.
-                        if (yDx > 0f) {
+                        if (pullFromBottom ? yDx < 0f || mLastMotionY == -1f : yDx > 0f) {
                             mLastMotionY = y;
                         }
                     } else {
