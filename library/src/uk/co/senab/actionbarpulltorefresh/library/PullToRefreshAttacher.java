@@ -321,6 +321,15 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
         return mHeaderTransformer;
     }
 
+    /**
+     * Allows you to pull from the bottom
+     *
+     * @param pullFromBottom - enables pull from bottom instead of pulling down from top
+     */
+    public void setPullFromBottom(boolean pullFromBottom) {
+        this.pullFromBottom = pullFromBottom;
+    }
+
     @Override
     public final boolean onTouch(final View view, final MotionEvent event) {
         if (!mIsHandlingTouchEvent && onInterceptTouchEvent(view, event)) {
@@ -359,7 +368,6 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
 
                     if (yDiff > mTouchSlop) {
                         mIsBeingDragged = true;
-                        if (pullDownListener != null) pullDownListener.onPullDown(true);
                         onPullStarted(y);
                     } else if (yDiff < -mTouchSlop) {
                         resetTouch();
@@ -989,5 +997,4 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
             mHeaderTransformer.onRefreshMinimized();
         }
     };
-
 }
