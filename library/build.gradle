@@ -2,7 +2,12 @@ apply plugin: 'android-library'
 
 android {
     compileSdkVersion 18
-    buildToolsVersion '18'
+    buildToolsVersion '18.0.1'
+
+    defaultConfig {
+        minSdkVersion 5
+        targetSdkVersion 17
+    }
 
     sourceSets {
         main {
@@ -12,3 +17,22 @@ android {
         }
     }
 }
+
+if (!hasProperty('uploadRepositoryUri')) project.ext.uploadRepositoryUri = ''
+if (!hasProperty('uploadSnapshotRepositoryUri')) project.ext.uploadSnapshotRepositoryUri = ''
+if (!hasProperty('uploadUser')) project.ext.uploadUser = ''
+if (!hasProperty('uploadPassword')) project.ext.uploadPassword = ''
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri(uploadRepositoryUri)) {
+                authentication(userName: uploadUser, password: uploadPassword)
+            }
+            snapshotRepository(url: uri(uploadSnapshotRepositoryUri)) {
+                authentication(userName: uploadUser, password: uploadPassword)
+            }
+        }
+    }
+}
+
