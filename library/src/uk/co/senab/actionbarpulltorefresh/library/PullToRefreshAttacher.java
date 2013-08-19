@@ -404,6 +404,7 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
             case MotionEvent.ACTION_DOWN: {
                 // If we're already refreshing, ignore
                 if (canRefresh(true, params.onRefreshListener) &&
+                        pullFromBottom ? params.viewDelegate.isScrolledToBottom(view) :
                         params.viewDelegate.isScrolledToTop(view)) {
                     mInitialMotionY = event.getY();
                 }
@@ -717,6 +718,16 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
          * @return true if <code>view</code> is scrolled to the top.
          */
         public abstract boolean isScrolledToTop(View view);
+
+        /**
+         * Allows you to provide support for View which do not have built-in support. In this
+         * method you should cast <code>view</code> to it's native class, and check if it is
+         * scrolled to the bottom.
+         *
+         * @param view The view which has should be checked against.
+         * @return true if <code>view</code> is scrolled to the bottom.
+         */
+        public abstract boolean isScrolledToBottom(View view);
     }
 
     /**
