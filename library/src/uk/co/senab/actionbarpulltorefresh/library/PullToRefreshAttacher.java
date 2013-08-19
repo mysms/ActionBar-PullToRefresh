@@ -702,6 +702,8 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
          * {@link Options#refreshMinimizeDelay}.
          */
         public abstract void onRefreshMinimized();
+
+        public abstract void setBackground(Drawable background);
     }
 
     /**
@@ -919,6 +921,9 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
                 mContentLayout.setVisibility(View.INVISIBLE);
             }
         }
+
+        @Override
+        public void setBackground(Drawable background) {}
 
         /**
          * Set Text to show to prompt the user is pull (or keep pulling).
