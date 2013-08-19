@@ -68,7 +68,7 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
     private final EnvironmentDelegate mEnvironmentDelegate;
     private final HeaderTransformer mHeaderTransformer;
 
-    private final View mHeaderView;
+    private View mHeaderView = null;
     private final Animation mHeaderInAnimation, mHeaderOutAnimation;
 
     private final int mTouchSlop;
@@ -97,7 +97,19 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
      * @return PullToRefresh attached to the Activity.
      */
     public static PullToRefreshAttacher get(Activity activity) {
-        return get(activity, new Options());
+        return get(activity, new Options(), false);
+    }
+
+    /**
+     * Get a PullToRefreshAttacher for this Activity. If there is already a PullToRefreshAttacher
+     * attached to the Activity, the existing one is returned, otherwise a new instance is created.
+     * This version of the method will use default configuration options for everything.
+     *
+     * @param activity Activity to attach to.
+     * @return PullToRefresh attached to the Activity.
+     */
+    public static PullToRefreshAttacher get(Activity activity, boolean customView) {
+        return get(activity, new Options(), customView);
     }
 
     /**
@@ -108,16 +120,16 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
      * @param options Options used when creating the PullToRefreshAttacher.
      * @return PullToRefresh attached to the Activity.
      */
-    public static PullToRefreshAttacher get(Activity activity, Options options) {
+    public static PullToRefreshAttacher get(Activity activity, Options options, boolean cutomHeader) {
         PullToRefreshAttacher attacher = ATTACHERS.get(activity);
         if (attacher == null) {
-            attacher = new PullToRefreshAttacher(activity, options);
+            attacher = new PullToRefreshAttacher(activity, options, cutomHeader);
             ATTACHERS.put(activity, attacher);
         }
         return attacher;
     }
 
-    protected PullToRefreshAttacher(Activity activity, Options options) {
+    protected PullToRefreshAttacher(Activity activity, Options options, boolean customHeader) {
         if (options == null) {
             Log.i(LOG_TAG, "Given null options so using default options.");
             options = new Options();
@@ -160,24 +172,26 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
             throw new IllegalStateException("View already installed to DecorView. This shouldn't happen.");
         }
 
-        // Create Header view and then add to Decor View
-        mHeaderView = LayoutInflater.from(mEnvironmentDelegate.getContextForInflater(activity))
-                .inflate(options.headerLayout, decorView, false);
-        if (mHeaderView == null) {
-            throw new IllegalArgumentException("Must supply valid layout id for header.");
+        if (!customHeader) {
+            // Create Header view and then add to Decor View
+            mHeaderView = LayoutInflater.from(mEnvironmentDelegate.getContextForInflater(activity))
+                    .inflate(options.headerLayout, decorView, false);
+            if (mHeaderView == null) {
+                throw new IllegalArgumentException("Must supply valid layout id for header.");
+            }
+            mHeaderView.setVisibility(View.GONE);
+
+            // Create DecorChildLayout which will move all of the system's decor view's children + the
+            // Header View to itself. See DecorChildLayout for more info.
+            DecorChildLayout decorContents = new DecorChildLayout(activity, decorView, mHeaderView);
+
+            // Now add the DecorChildLayout to the decor view
+            decorView.addView(decorContents, ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT);
+
+            // Notify transformer
+            mHeaderTransformer.onViewCreated(activity, mHeaderView);
         }
-        mHeaderView.setVisibility(View.GONE);
-
-        // Create DecorChildLayout which will move all of the system's decor view's children + the
-        // Header View to itself. See DecorChildLayout for more info.
-        DecorChildLayout decorContents = new DecorChildLayout(activity, decorView, mHeaderView);
-
-        // Now add the DecorChildLayout to the decor view
-        decorView.addView(decorContents, ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT);
-
-        // Notify transformer
-        mHeaderTransformer.onViewCreated(activity, mHeaderView);
     }
 
     /**
@@ -330,6 +344,16 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
         this.pullFromBottom = pullFromBottom;
     }
 
+    /**
+     * Allows you to set a custom header view instead of the original header in the ActionBar
+     *
+     * @param customHeaderView - your custom header
+     */
+    public void setCustomHeader(View customHeaderView) {
+        mHeaderView = customHeaderView;
+        mHeaderTransformer.onViewCreated(mActivity, mHeaderView);
+    }
+
     @Override
     public final boolean onTouch(final View view, final MotionEvent event) {
         if (!mIsHandlingTouchEvent && onInterceptTouchEvent(view, event)) {
@@ -368,6 +392,7 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
 
                     if (yDiff > mTouchSlop) {
                         mIsBeingDragged = true;
+                        if (pullDownListener != null) pullDownListener.onPullDown(true);
                         onPullStarted(y);
                     } else if (yDiff < -mTouchSlop) {
                         resetTouch();
