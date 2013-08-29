@@ -704,6 +704,8 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
         public abstract void onRefreshMinimized();
 
         public abstract void setBackground(Drawable background);
+
+        public abstract void configurationChanged(Activity activity);
     }
 
     /**
@@ -924,6 +926,9 @@ public class PullToRefreshAttacher implements View.OnTouchListener {
 
         @Override
         public void setBackground(Drawable background) {}
+
+        @Override
+        public void configurationChanged(Activity activity) {}
 
         /**
          * Set Text to show to prompt the user is pull (or keep pulling).
